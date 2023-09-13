@@ -11,4 +11,9 @@ class GroupController {
   Future<void> loadGroups() async {
     listGroups = await groupsService.getGroups();
   }
+
+  Future<void> insertGroup() async {
+    final group = Group(description: groupNameController.text, status: 0);
+    await groupsService.insertTask(group);
+  }
 }

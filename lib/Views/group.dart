@@ -50,10 +50,8 @@ class _GroupScreenState extends State<GroupScreen> {
                 const SizedBox(height: 16.0),
                 ElevatedButton(
                   onPressed: () async {
-                    final groupName = groupController.groupNameController.text;
-                    final group = Group(description: groupName, status: 0);
-                    await groupController.groupsService.insertTask(group);
-                    groupController.loadGroups();
+                    await groupController.insertGroup();
+                    await groupController.loadGroups();
                     setState(() {
                       groupController = groupController;
                     });
