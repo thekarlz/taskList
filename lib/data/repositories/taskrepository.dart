@@ -7,13 +7,14 @@ class TaskRepository implements ITaskRepository {
 
   Future<List<Task>> get() async {
     final db = await databaseManager.database;
-    final tasks = await db!.query('tasks');
+    final tasks = await db!.query('tasks', orderBy: 'tk_enddate ASC');
     return tasks.map((taskMap) => Task.fromMap(taskMap)).toList();
   }
 
   Future<List<Task>> getfilter(String where, List args) async {
     final db = await databaseManager.database;
-    final tasks = await db!.query('tasks', where: where, whereArgs: args);
+    final tasks = await db!.query('tasks',
+        where: where, whereArgs: args, orderBy: 'tk_enddate ASC');
     return tasks.map((taskMap) => Task.fromMap(taskMap)).toList();
   }
 

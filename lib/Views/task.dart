@@ -216,7 +216,7 @@ class _TaskScreenState extends State<TaskScreen> {
                   await _taskService.insertTask(task);
                   Navigator.pop(context);
                 },
-                child: Text('Inserir Tarefa'),
+                child: const Text('Inserir Tarefa'),
               ),
             ],
           ),
