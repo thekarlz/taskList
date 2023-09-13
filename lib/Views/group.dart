@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tasklist/controller/groupcontroller.dart';
 import '../data/model/groupmodel.dart';
-import '../services/groupservice.dart';
 import '../components/snackbar.dart';
 
 class GroupScreen extends StatefulWidget {
@@ -11,22 +11,19 @@ class GroupScreen extends StatefulWidget {
 }
 
 class _GroupScreenState extends State<GroupScreen> {
-  final GroupService _groupsService = GroupService();
-
-  final TextEditingController groupNameController = TextEditingController();
-  List<Group> listGroups = [];
-
-  Future<void> _loadGroups() async {
-    final lgroups = await _groupsService.getGroups();
-    setState(() {
-      listGroups = lgroups;
-    });
-  }
+  GroupController groupController = GroupController();
 
   @override
   void initState() {
     super.initState();
-    _loadGroups();
+    start();
+  }
+
+  start() async {
+    await groupController.loadGroups();
+    setState(() {
+      groupController = groupController;
+    });
   }
 
   @override
@@ -46,18 +43,20 @@ class _GroupScreenState extends State<GroupScreen> {
               children: [
                 TextField(
                   maxLength: 20,
-                  controller: groupNameController,
+                  controller: groupController.groupNameController,
                   decoration: const InputDecoration(
                       counterText: '', labelText: 'Nome do Grupo'),
                 ),
                 const SizedBox(height: 16.0),
                 ElevatedButton(
                   onPressed: () async {
-                    final groupName = groupNameController.text;
+                    final groupName = groupController.groupNameController.text;
                     final group = Group(description: groupName, status: 0);
-                    await _groupsService.insertTask(group);
-
-                    _loadGroups();
+                    await groupController.groupsService.insertTask(group);
+                    groupController.loadGroups();
+                    setState(() {
+                      groupController = groupController;
+                    });
                   },
                   child: const Text('Salvar'),
                 ),
@@ -65,9 +64,9 @@ class _GroupScreenState extends State<GroupScreen> {
                 ListView.builder(
                     shrinkWrap: true,
                     physics: const ClampingScrollPhysics(),
-                    itemCount: listGroups.length,
+                    itemCount: groupController.listGroups.length,
                     itemBuilder: (context, index) {
-                      final groups = listGroups[index];
+                      final groups = groupController.listGroups[index];
                       return Card(
                         child: ListTile(
                           leading: IconButton(
@@ -79,12 +78,15 @@ class _GroupScreenState extends State<GroupScreen> {
                                     Icons.lock,
                                   ),
                             onPressed: () async {
-                              final res = await _groupsService
+                              final res = await groupController.groupsService
                                   .toogleStatusGroups(groups);
                               if (res) {
                                 snackbar(context,
                                     msg: 'Status do grupo alterado');
-                                _loadGroups();
+                                groupController.loadGroups();
+                                setState(() {
+                                  groupController = groupController;
+                                });
                               } else {
                                 snackbar(context,
                                     msg: 'erro ao modifical grupo');
@@ -97,10 +99,13 @@ class _GroupScreenState extends State<GroupScreen> {
                               Icons.delete,
                             ),
                             onPressed: () async {
-                              final res = await _groupsService
+                              final res = await groupController.groupsService
                                   .delGroup(groups.idGroup!);
                               if (res) {
-                                _loadGroups();
+                                groupController.loadGroups();
+                                setState(() {
+                                  groupController = groupController;
+                                });
                               } else {
                                 snackbar(context,
                                     msg:

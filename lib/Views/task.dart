@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tasklist/components/snackbar.dart';
-import 'package:tasklist/data/model/groupmodel.dart';
+import 'package:tasklist/controller/taskcontroller.dart';
 import 'package:tasklist/Views/group.dart';
-import 'package:tasklist/services/groupservice.dart';
-import 'package:tasklist/services/taskservice.dart';
 import '../data/model/taskmodel.dart';
-import 'package:intl/intl.dart';
 
 class TaskScreen extends StatefulWidget {
   @override
@@ -13,72 +10,24 @@ class TaskScreen extends StatefulWidget {
 }
 
 class _TaskScreenState extends State<TaskScreen> {
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
+  TaskController taskController = TaskController();
 
-  final GroupService _groupsService = GroupService();
-  final TaskService _taskService = TaskService();
-
-  int _selectedGroupId = 0;
-  List<Group> listGroups = [];
-
-  String _selectedPriority = 'Normal';
-  final List<String> _selectedOptions = ['Baixa', 'Normal', 'Alta'];
-
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(DateTime.now().year + 5),
-    );
-
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-        _dateController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime ?? TimeOfDay.now(),
-    );
-
-    if (pickedTime != null && pickedTime != _selectedTime) {
-      setState(() {
-        _selectedTime = pickedTime;
-        _timeController.text = pickedTime.format(context);
-      });
-    }
-  }
-
-  Future<void> _loadGroups() async {
-    final lgroups = await _groupsService.getGroups();
-    if (lgroups.isEmpty) {
-      _selectedGroupId = 0;
-      lgroups.add(Group(description: 'Cadastrar', status: 0, idGroup: 0));
-    } else {
-      lgroups.removeWhere((element) => element.status == 1);
-      _selectedGroupId = 1;
-      listGroups = lgroups;
-    }
-    setState(() {
-      listGroups = lgroups;
-    });
-  }
+  // TextEditingController _descriptionController = TextEditingController();
+  // TextEditingController _dateController = TextEditingController();
+  // TextEditingController _timeController = TextEditingController();
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _loadGroups();
+    start();
+  }
+
+  start() async {
+    await taskController.loadGroups();
+    setState(() {
+      taskController = taskController;
+    });
   }
 
   @override
@@ -94,38 +43,44 @@ class _TaskScreenState extends State<TaskScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
-                controller: _descriptionController,
+                controller: taskController.descriptionController,
                 decoration:
                     const InputDecoration(labelText: 'Descrição da Tarefa'),
               ),
               const SizedBox(height: 16.0),
               TextField(
-                controller: _dateController,
+                controller: taskController.dateController,
                 decoration: const InputDecoration(
                   labelText: 'Data de Vencimento',
                 ),
-                onTap: () {
-                  _selectDate(context);
+                onTap: () async {
+                  await taskController.selectDate(context);
+                  setState(() {
+                    taskController = taskController;
+                  });
                 },
               ),
               SizedBox(height: 16.0),
               TextField(
-                controller: _timeController,
+                controller: taskController.timeController,
                 decoration:
                     const InputDecoration(labelText: 'Hora de Vencimento'),
-                onTap: () {
-                  _selectTime(context);
+                onTap: () async {
+                  await taskController.selectTime(context);
+                  setState(() {
+                    taskController = taskController;
+                  });
                 },
               ),
               SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
-                value: _selectedPriority,
+                value: taskController.selectedPriority,
                 onChanged: (value) {
                   setState(() {
-                    _selectedPriority = value!;
+                    taskController.selectedPriority = value!;
                   });
                 },
-                items: _selectedOptions
+                items: taskController.selectedOptions
                     .asMap()
                     .map((index, priorityName) => MapEntry(
                           index,
@@ -142,13 +97,14 @@ class _TaskScreenState extends State<TaskScreen> {
               ),
               SizedBox(height: 16.0),
               DropdownButtonFormField<int>(
-                value: _selectedGroupId,
+                value: taskController.selectedGroupId,
                 onChanged: (value) {
+                  taskController.selectedGroupId = value!;
                   setState(() {
-                    _selectedGroupId = value!;
+                    taskController = taskController;
                   });
                 },
-                items: listGroups
+                items: taskController.listGroups
                     .asMap()
                     .map((index, group) => MapEntry(
                           index,
@@ -170,7 +126,10 @@ class _TaskScreenState extends State<TaskScreen> {
                           builder: (context) => GroupScreen(),
                         ),
                       );
-                      _loadGroups();
+                      await taskController.loadGroups();
+                      setState(() {
+                        taskController = taskController;
+                      });
                     },
                   ),
                 ),
@@ -179,11 +138,11 @@ class _TaskScreenState extends State<TaskScreen> {
               ElevatedButton(
                 onPressed: () async {
                   // Obtenha os valores dos campos de texto
-                  final description = _descriptionController.text;
-                  final priority = _selectedPriority;
-                  final enddateDate = _selectedDate;
-                  final enddateTime = _selectedTime;
-                  final groupid = _selectedGroupId;
+                  final description = taskController.descriptionController.text;
+                  final priority = taskController.selectedPriority;
+                  final enddateDate = taskController.selectedDate;
+                  final enddateTime = taskController.selectedTime;
+                  final groupid = taskController.selectedGroupId;
 
                   if (groupid == 0) {
                     snackbar(context, msg: 'Cadastre um grupo para continuar.');
@@ -213,7 +172,7 @@ class _TaskScreenState extends State<TaskScreen> {
                     status: 0,
                   );
 
-                  await _taskService.insertTask(task);
+                  await taskController.taskService.insertTask(task);
                   Navigator.pop(context);
                 },
                 child: const Text('Inserir Tarefa'),
@@ -227,7 +186,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
   @override
   void dispose() {
-    _descriptionController.dispose();
+    taskController.descriptionController.dispose();
     super.dispose();
   }
 }
